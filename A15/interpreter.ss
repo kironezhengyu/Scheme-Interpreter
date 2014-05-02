@@ -10,7 +10,7 @@
 ;add local enviroment
 (define eval-exp
   (lambda (exp env)
-    (display "i am top " )(display exp) (newline)
+    ; (display "i am top " )(display exp) (newline)
     (cases expression exp
       [lit-exp (datum) datum]
       [var-exp (id)
@@ -45,6 +45,10 @@
       [lambda-exp (params body)
         (closure params body env)]
 
+      [no-parens-lambda-exp (params body)
+        (informal-closure params body env)
+      ]
+
 
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
@@ -60,9 +64,12 @@
 
 (define apply-proc
   (lambda (proc-value args)
+    (display args)(newline)
     (cases proc-val proc-value
       [prim-proc (op) (apply-prim-proc op args)]
 			[closure (vars bodies env)  (eval-exp (car bodies) (extend-env   (map cadr vars)  args env))]
+      [informal-closure (vars bodies env)  (eval-exp (car bodies) (extend-env  (list vars)  (list args) env)) ]
+
       [else (error 'apply-proc
                    "Attempt to apply bad procedure: ~s" 
                     proc-value)])))
@@ -155,7 +162,7 @@
 
 
 
-
+(define display pretty-print)
 
 
 

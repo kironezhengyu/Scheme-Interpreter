@@ -102,7 +102,7 @@
          
          ((eqv? (car datum) 'quote) 
           (if (equal? (length datum) 2)
-              (lit-exp datum)
+              (lit-exp  (cadr datum))
               (eopl:error 'parse-exp "Error in parse-exp: Invalid syntax ~s" datum)))
          
          ((eqv? (car datum) 'lambda)

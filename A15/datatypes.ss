@@ -23,9 +23,12 @@
   [prim-proc (name symbol?)]
   [closure (params (list-of scheme-value?))
           (body (list-of expression?))
+          (env environment?)]
+  [informal-closure (params  scheme-value?)
+          (body (list-of expression?))
           (env environment?)
-
-    ])
+  ]
+          )
 	 
 	 
 	 
