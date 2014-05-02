@@ -20,8 +20,12 @@
 ; kind of procedure, but more kinds will be added later.
 
 (define-datatype proc-val proc-val?
-  [prim-proc
-   (name symbol?)])
+  [prim-proc (name symbol?)]
+  [closure (params (list-of scheme-value?))
+          (body (list-of expression?))
+          (env environment?)
+
+    ])
 	 
 	 
 	 

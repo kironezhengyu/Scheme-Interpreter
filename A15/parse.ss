@@ -14,7 +14,7 @@
 (define-datatype expression expression?
   (var-exp
    (id symbol?))
-    (app-exp
+  (app-exp
    (rator expression?)
    (rand (list-of expression?)))
   (lit-exp
