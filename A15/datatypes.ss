@@ -1,19 +1,21 @@
 
 ;; Parsed expression datatypes
 
-(define-datatype expression expression?
-  [var-exp        ; variable references
-   (id symbol?)]
-  [lit-exp        ; "Normal" data.  Did I leave out any types?
-   (datum
-    (lambda (x)
-      (ormap 
-       (lambda (pred) (pred x))
-       (list number? vector? boolean? symbol? string? pair? null?))))]
-  [app-exp        ; applications
-   (rator expression?)
-   (rands (list-of expression?))]  
-  )
+; (define-datatype expression expression?
+;   [var-exp        ; variable references
+;    (id symbol?)]
+;   [lit-exp        ; "Normal" data.  Did I leave out any types?
+;    (datum
+;     (lambda (x)
+;       (ormap 
+;        (lambda (pred) (pred x))
+;        (list number? vector? boolean? symbol? string? pair? null?))))]
+;   [app-exp        ; applications
+;    (rator expression?)
+;    (rands (list-of expression?))]
+;   [begin-exp
+;   (exps (list-of expression?))]  
+;   )
 
 	
 ; datatype for procedures.  At first there is only one
@@ -22,13 +24,18 @@
 (define-datatype proc-val proc-val?
   [prim-proc (name symbol?)]
   [closure (params (list-of scheme-value?))
-          (body (list-of expression?))
+          (body  expression?)
           (env environment?)]
   [informal-closure (params  scheme-value?)
-          (body (list-of expression?))
-          (env environment?)
+          (body  expression?)
+          (env environment?)]
+  [improper-closure
+   (params (list-of symbol?))
+   (rest symbol?)
+   (bodies expression?)
+   (env environment?)
   ]
-          )
+ )
 	 
 	 
 	 

@@ -177,8 +177,7 @@
          (eval-one-exp ' ((lambda (x y . z) 
                 (if (> x y) (car z) (cdr z)) (cadr z)) 
                   5 4 'three 'two 'one))
-         (eval-one-exp ' 
-          ((lambda (a b) 
+         (eval-one-exp ' ((lambda (a b) 
          (let ([a (+ a b)] [b (- a b)]) 
            (let ([f (lambda (a) (+ a b))]) 
              (f (+ 3 a b))))) 

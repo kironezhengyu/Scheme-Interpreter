@@ -11,6 +11,13 @@
 
 (load "chez-init.ss")
 
+(define proper-list?
+  (lambda (l)
+    (cond [(null? l) #t]
+          [(pair? l) (proper-list? (cdr l))]
+          [else #f])))
+
+
 (define-datatype expression expression?
   (var-exp
    (id symbol?))
@@ -19,17 +26,16 @@
    (rand (list-of expression?)))
   (lit-exp
    (id scheme-value?))
-  
   (lambda-exp
-   (id (list-of expression?))
-   (body (list-of expression?)))
+   (id (list-of symbol?))
+   (body expression?))
   (no-parens-lambda-exp
    (id symbol?)
-   (body (list-of expression?)))
+   (body expression?))
   (improper-lambda-exp
-   (ids expression?)
-   (body (list-of expression?)))
-
+    (id list?)
+    (sym symbol?)
+    (body  expression?))
   (let-exp
    (ids (list-of expression?))
    (values (list-of expression?))
@@ -47,11 +53,11 @@
    (ids (list-of expression?))
    (values (list-of expression?))
    (body (list-of expression?)))
-  
   (set!-exp
    (id symbol?)
    (body expression?))
-  
+  (begin-exp
+  (exps (list-of expression?)))
   (if-exp
    (test expression?)
    (true expression?)
@@ -65,7 +71,33 @@
   (lambda (value)
     #t))
 
+(define validLambda?
+  (lambda (expr)
+    (cond
+     ; Check to see that we have at least lambda, an argument, and expressions
+     [(< (length expr) 3)
+      (eopl:error  'parse-expression "Incorrect length in ~s" expr)]
+     ; Make sure the arguments are valid
+     [(not (or (symbol? (cadr expr))
+         (null? (cadr expr))
+         (and (or (list? (cadr expr)) (pair? (cadr expr)))
+        (or (pair? (cadr expr)) (andmap symbol? (cadr expr))))))
+      (eopl:error  'parse-expression "Incorrect argument list in ~s" expr)]
+     ; Make sure each variable only occurs once
+     [(if (list? (cadr expr))
+    (not (set? (cadr expr)))
+    #f)
+      (eopl:error  'parse-expression "Each variable may only occur once in ~s" expr)]
+     [else #t])))
 
+(define parse-parms
+    (lambda (ls)
+        (if (symbol? ls)
+            ls
+            (let ([t (parse-parms (cdr ls))])
+                (if (symbol? t)
+                    (cons (list (car ls)) (list (list t)))
+                    (cons (cons (car ls) (car t)) (cdr t)))))))
 (define andmap
   (lambda (ls)
     (if (null? ls)
@@ -105,14 +137,17 @@
               (lit-exp  (cadr datum))
               (eopl:error 'parse-exp "Error in parse-exp: Invalid syntax ~s" datum)))
          
-         ((eqv? (car datum) 'lambda)
-          (if (> (length datum) 2)
-              (if (symbol? (cadr datum))
-                  (no-parens-lambda-exp (cadr datum) (map parse-exp (cddr datum)))
-                  (if (and (proper-list? (cadr datum)) (andmap (map symbol? (cadr datum))) (not (contain-multiple? (cadr datum))))
-                      (lambda-exp (map parse-exp (cadr datum)) (map parse-exp (cddr datum)))
-                      (eopl:error 'parse-exp "Error in parse-exp: Invalid syntax ~s" datum)))
-              (eopl:error 'parse-exp "Error in parse-exp: Incorrect length in ~s" datum)))
+
+[(eqv? (car datum) 'lambda)
+   (if (validLambda? datum)
+    (cond 
+       [(symbol? (cadr datum)) (no-parens-lambda-exp(cadr datum)
+     (begin-exp(map parse-exp (cddr datum))))]
+     [(list? (cadr datum)) (lambda-exp(cadr datum)
+       (begin-exp(map parse-exp (cddr datum))))]
+     [(pair? (cadr datum))
+   (let ([t (parse-parms (cadr datum))])
+     (improper-lambda-exp (car t) (caadr t)  (begin-exp(map parse-exp (cddr datum)))))]))]
          
          ((eqv? (car datum) 'let)
           (cond

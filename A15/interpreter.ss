@@ -6,13 +6,31 @@
     (eval-exp form init-env)))
 
 ; eval-exp is the main component of the interpreter
+(define parse-args
+    (lambda (n ls)
+        (if (= n 0)
+            (cons #t ls)
+            (let ([t (parse-args (- n 1) (cdr ls))])
+                    (if (eq? (car t) #t)
+                        (cons (list (car ls)) (list (cdr t)))
+                        (cons (cons (car ls) (car t)) (cdr t)))))))
 
+
+
+(define eval-begin
+  (lambda (exp env )
+    (let loop([exp exp])
+        (if (null? (cdr exp))
+        (eval-exp (car exp) env)
+        (loop (cdr exp))))))
 ;add local enviroment
 (define eval-exp
   (lambda (exp env)
     ; (display "i am top " )(display exp) (newline)
     (cases expression exp
       [lit-exp (datum) datum]
+      [begin-exp (exps)
+          (eval-begin exps env)]  
       [var-exp (id)
 				(apply-env env id; look up its value.
       	   (lambda (x) x) ; procedure to call if id is in the environment 
@@ -27,7 +45,7 @@
           (apply-proc proc-value args))]
 
       [let-exp (vars exps bodies)
-          (let ([new-env (extend-env vars  
+          (let ([new-env (extend-env (map cadr vars)  
                             (map (lambda (x) (eval-exp x env)) exps) env)])
           (let loop ([bodies bodies])
                 (if (null? (cdr bodies))
@@ -48,6 +66,8 @@
       [no-parens-lambda-exp (params body)
         (informal-closure params body env)
       ]
+      [improper-lambda-exp (params rest body)
+        (improper-closure params rest body env)]
 
 
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
@@ -62,20 +82,37 @@
 ;  At this point  we only have primitive procedures.  
 ;  User-defined procedures will be added later.
 
+
+
 (define apply-proc
   (lambda (proc-value args)
-    (display args)(newline)
-    (cases proc-val proc-value
-      [prim-proc (op) (apply-prim-proc op args)]
-			[closure (vars bodies env)  (eval-exp (car bodies) (extend-env   (map cadr vars)  args env))]
-      [informal-closure (vars bodies env)  (eval-exp (car bodies) (extend-env  (list vars)  (list args) env)) ]
+    (cond 
+      [(proc-val? proc-value)
+        (cases proc-val proc-value
+        [prim-proc (op) (apply-prim-proc op args)]
+  			[closure (vars bodies env) (eval-exp   bodies (extend-env  vars  args env))]
+        [informal-closure (vars bodies env)  (eval-exp bodies (extend-env  (list vars)  (list args) env)) ]
+        [improper-closure (params rest body env) 
+        (let* ([parsed-args (parse-args (length params) args)]
+                             [defined (car parsed-args)]
+                             [other (cadr parsed-args)])
+                      (eval-exp  body (extend-env (list rest) (list other) (extend-env params defined env))))]
+        )]
+        
+      [(list? proc-value)
+        (letrec ([helper (lambda (ls)
+            (if (null? (cdr ls))
+                    (apply-proc (car ls) args)
+                    (begin (apply-proc (car ls) args) (helper (cdr ls)))))]) (helper proc-value))]
 
       [else (error 'apply-proc
-                   "Attempt to apply bad procedure: ~s" 
-                    proc-value)])))
+                     "Attempt to apply bad procedure: ~s" 
+                      proc-value)]
+    )))
+
 
 (define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = 
-			      <  >  cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length 
+			      <  >  >= cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length 
 			      list->vector  list?  pair?  procedure?  vector->list  vector  make-vector  vetor-ref  vector?  number?  symbol?  set-car!   set-cdr!  vector-set!   display   newline  
 			      cadr  cddr  cdar  caar  caaar  caadr  caddr  cadar  cdddr  cddar  cdaar  cdadr))
 
@@ -91,7 +128,6 @@
 
 (define apply-prim-proc
   (lambda (prim-proc args)
-    
     (case prim-proc
       [(+) (apply + args)]
       [(-) (apply - args)]
@@ -99,11 +135,13 @@
       [(add1) (+ (1st args) 1)]
       [(sub1) (- (1st args) 1)]
       [(zero?) (zero? (1st args))]
+      [(/)(apply / args)]
       [(not) (not (1st args))]
       [(cons) (cons (1st args) (2nd args))]
       [(=) (= (1st args) (2nd args))]
       [(<) (< (1st args) (2nd args))]
       [(>) (> (1st args) (2nd args))]
+      [(>=)(>= (1st args)(2nd args))]
       [(car) (car (1st args))]
       [(cdr) (cdr (1st args))]
       [(list) args]
@@ -145,7 +183,7 @@
       [(cdadr) (cdadr (1st args))]
       [else (error 'apply-prim-proc 
             "Bad primitive procedure name: ~s" 
-            prim-op)])))
+            args)])))
 
 (define rep      ; "read-eval-print" loop.
   (lambda ()
