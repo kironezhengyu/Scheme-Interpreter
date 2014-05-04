@@ -25,15 +25,15 @@
   [prim-proc (name symbol?)]
   [closure (params (list-of scheme-value?))
           (body  expression?)
-          (env environment?)]
+          (env list?)]
   [informal-closure (params  scheme-value?)
           (body  expression?)
-          (env environment?)]
+          (env list?)]
   [improper-closure
    (params (list-of symbol?))
    (rest symbol?)
    (bodies expression?)
-   (env environment?)
+   (env list?)
   ]
  )
 	 
