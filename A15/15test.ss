@@ -113,8 +113,7 @@
          (eval-one-exp '(caar '((a b) c)))
          (eval-one-exp '(cadr '((a b) c)))
          (eval-one-exp '(cadar '((a b) c)))
-         (eval-one-exp '
-          (list (procedure? list)
+         (eval-one-exp '(list (procedure? list)
             (procedure? (lambda (x y) (list (+ x y))))
             (procedure? 'list)))
          )])
