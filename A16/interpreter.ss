@@ -121,8 +121,8 @@
 
 (define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = 
 			      <  >  >= cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length 
-			      list->vector  list?  pair?  procedure?  vector->list  vector  make-vector  vetor-ref  vector?  number?  symbol?  set-car!   set-cdr!  vector-set!   display   newline  
-			      cadr  cddr  cdar  caar  caaar  caadr  caddr  cadar  cdddr  cddar  cdaar  cdadr))
+			      list->vector  list?  pair?  procedure?  vector->list  vector  make-vector  vector-ref  vector?  number?  symbol?  set-car!   set-cdr!  vector-set!   display   newline  
+			      cadr  cddr  cdar  caar  caaar  caadr  caddr  cadar  cdddr  cddar  cdaar  cdadr map apply))
 
 (define init-env         ; for now  our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -167,7 +167,7 @@
       [(make-vector) (if (null? (cdr args))
        (make-vector (1st args))
        (make-vector (1st args) (2nd args)))]
-      [(vector-ref) (vector-ref (1st args) (2nd args))]
+      [(vector-ref) (vector-ref (car args) (cadr args))]
       [(vector?) (vector? (1st args))]
       [(number?) (number? (1st args))]
       [(symbol?) (symbol? (1st args))]
