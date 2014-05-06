@@ -34,7 +34,7 @@
                            (vector-ref (vector 2 4 5) 0))))
          (eval-one-exp '(length '(a b c d e)))
          (eval-one-exp '(vector->list '#(a b c)))
-         (eval-one-exp ' (list (procedure? list) 
+         (eval-one-exp '(list (procedure? list) 
                    (procedure? (lambda (x y) 
                          (list (+ x y)))) 
                    (procedure? 'list)))
@@ -150,7 +150,7 @@
                 [(1 3 5 7 9) 'odd] 
                 [(0 2 4 6 8) 'even] 
                 [else 'out-of-range])))
-         (eval-one-exp ' (let ((a (list 5))) 
+         (eval-one-exp '(let ((a (list 5))) 
                    (if #t (begin (set-car! a 3) 
                          (set-car! a (+ 3 (car a))) a))))
          (eval-one-exp '(let ([a (list 3)]) 

@@ -44,54 +44,6 @@
  )
 	 
 	 
-	 (define-datatype expression expression?
-  (var-exp
-   (id symbol?))
-  (app-exp
-   (rator expression?)
-   (rand (list-of expression?)))
-  (lit-exp
-   (id scheme-value?))
-  (lambda-exp
-   (id (list-of symbol?))
-   (body expression?))
-  (no-parens-lambda-exp
-   (id symbol?)
-   (body expression?))
-  (improper-lambda-exp
-    (id list?)
-    (sym symbol?)
-    (body  expression?))
-  (let-exp
-   (ids (list-of expression?))
-   (values (list-of expression?))
-   (body (list-of expression?)))
-  (let*-exp
-   (ids (list-of expression?))
-   (values (list-of expression?))
-   (body (list-of expression?)))
-  (letrec-exp
-   (ids (list-of expression?))
-   (values (list-of expression?))
-   (body (list-of expression?)))
-  (named-let-exp
-   (name expression?)
-   (ids (list-of expression?))
-   (values (list-of expression?))
-   (body (list-of expression?)))
-  (set!-exp
-   (id symbol?)
-   (body expression?))
-  (begin-exp
-  (exps (list-of expression?)))
-  (if-exp
-   (test expression?)
-   (true expression?)
-   (false expression?))
-  (no-else-if-exp
-   (test expression?)
-   (true expression?))
-  )
 
 (define scheme-value?
   (lambda (value)

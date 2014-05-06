@@ -11,6 +11,61 @@
 
 (load "chez-init.ss")
 
+   (define-datatype expression expression?
+  (var-exp
+   (id symbol?))
+  (app-exp
+   (rator expression?)
+   (rand (list-of expression?)))
+  (lit-exp
+   (id scheme-value?))
+  (lambda-exp
+   (id (list-of symbol?))
+   (body expression?))
+  (no-parens-lambda-exp
+   (id symbol?)
+   (body expression?))
+  (improper-lambda-exp
+    (id list?)
+    (sym symbol?)
+    (body  expression?))
+  (let-exp
+   (ids (list-of expression?))
+   (values (list-of expression?))
+   (body (list-of expression?)))
+  (let*-exp
+   (ids (list-of expression?))
+   (values (list-of expression?))
+   (body (list-of expression?)))
+  (letrec-exp
+   (ids (list-of expression?))
+   (values (list-of expression?))
+   (body (list-of expression?)))
+  (named-let-exp
+   (name expression?)
+   (ids (list-of expression?))
+   (values (list-of expression?))
+   (body (list-of expression?)))
+  (set!-exp
+   (id symbol?)
+   (body expression?))
+  (begin-exp
+  (exps (list-of expression?)))
+  (if-exp
+   (test expression?)
+   (true expression?)
+   (false expression?))
+  (no-else-if-exp
+   (test expression?)
+   (true expression?))
+  (cond-exp
+    (body list?))
+  (or-exp
+    (body list?))
+  (and-exp
+    (body list?))
+  )
+
 (define proper-list?
   (lambda (l)
     (cond [(null? l) #t]
@@ -154,7 +209,15 @@
               (if (null? (cdddr datum)) ;w/o else
                   (no-else-if-exp (parse-exp (cadr datum)) (parse-exp (caddr datum)))
                   (if-exp (parse-exp (cadr datum)) (parse-exp (caddr datum)) (parse-exp (cadddr datum)))))) ;if w/ else
-         
+         ((eqv? (car datum) 'cond)
+          (cond-exp (map (lambda (x) (list (parse-exp (car x)) (parse-exp (cadr x)))) (cdr datum))))
+          
+         ((eqv? (car datum) 'begin)
+          (begin-exp (map (lambda (x) (parse-exp x)) (cdr datum))))
+         ((eqv? (car datum) 'or)
+          (or-exp (map (lambda (x) (parse-exp x)) (cdr datum))))
+         ((eqv? (car datum) 'and)
+          (and-exp (map (lambda (x) (parse-exp x)) (cdr datum))))
          (else (app-exp (parse-exp (car datum)) (map parse-exp (cdr datum))))))
       (else (eopl:error 'parse-exp "Error in parse-exp: Invalid syntax ~s" datum)))))
 
