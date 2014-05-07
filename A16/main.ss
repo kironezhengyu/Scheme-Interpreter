@@ -15,3 +15,4 @@
 (load-all)
 
 (define l load-all) ; even easier!
+(load-all)

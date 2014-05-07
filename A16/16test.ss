@@ -154,7 +154,7 @@
                    (if #t (begin (set-car! a 3) 
                          (set-car! a (+ 3 (car a))) a))))
          (eval-one-exp '(let ([a (list 3)]) 
-                  (while (< (car a) 100000) 
+                  (while (< (car a) 100000)
                      (set-car! a (* (car a) (car a))) 
                      (set-car! a (quotient (car a) 2))) 
                   a))

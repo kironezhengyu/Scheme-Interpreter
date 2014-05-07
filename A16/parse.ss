@@ -32,7 +32,7 @@
   (let-exp
    (ids (list-of expression?))
    (values (list-of expression?))
-   (body (list-of expression?)))
+   (body list?))
   (let*-exp
    (ids (list-of expression?))
    (values (list-of expression?))
@@ -56,8 +56,8 @@
    (true expression?)
    (false expression?))
   (no-else-if-exp
-   (test expression?)
-   (true expression?))
+   (test scheme-value?)
+   (true scheme-value?))
   (cond-exp
     (body list?))
   (or-exp
@@ -67,6 +67,9 @@
   (case-exp 
     (test list?)
     (body list?))
+  (while-exp
+      (test expression?)
+      (bodys (list-of expression?)))
   )
 
 (define proper-list?
@@ -213,8 +216,23 @@
                   (if-exp (parse-exp (cadr datum)) (parse-exp (caddr datum)) (parse-exp (cadddr datum)))))) ;if w/ else
          ((eqv? (car datum) 'cond)
           (cond-exp (map (lambda (x) (list (parse-exp (car x)) (parse-exp (cadr x)))) (cdr datum))))
-          ((eqv? (car datum) 'case)
-          (case-exp (parse-exp (cadr datum)) (map (lambda (x) (list (parse-exp (car x)) (parse-exp (cadr x)))) (cddr datum))))
+    [(eq? (car datum) 'case)
+    (case-exp (parse-exp (cadr datum))
+      (letrec ([helper (lambda (ls)
+        (if (null? (cdr ls))
+          (if (eq? (caar ls) 'else)
+            (list (list (caar ls) (parse-exp (cadar ls))))
+            (list (list (caar ls) (parse-exp (cadar ls)))))
+        (cons (list (caar ls) (parse-exp (cadar ls))) (helper (cdr ls)))))])
+  (helper (cddr datum))))]
+
+
+  [(eqv? (car datum) 'while)
+    (while-exp (parse-exp (cadr datum))
+        (map parse-exp (cddr datum)))]
+
+          ; ((eqv? (car datum) 'case)
+          ; (case-exp (parse-exp (cadr datum)) (map (lambda (x) (list (parse-exp (car x)) (parse-exp (cadr x)))) (cddr datum))))
          ((eqv? (car datum) 'begin)
           (begin-exp (map (lambda (x) (parse-exp x)) (cdr datum))))
          ((eqv? (car datum) 'or)

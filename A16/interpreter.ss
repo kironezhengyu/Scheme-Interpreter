@@ -37,8 +37,8 @@
       [begin-exp (exps)
           (eval-begin exps env)]  
       [var-exp (id)
-				(apply-env env id; look up its value.
-      	   (lambda (x) x) ; procedure to call if id is in the environment 
+        (apply-env env id; look up its value.
+           (lambda (x) x) ; procedure to call if id is in the environment 
            (lambda () (apply-env init-env id
                           (lambda (x) x)
                           (lambda () (eopl:error 'apply-env ; procedure to call if id not in env
@@ -61,7 +61,7 @@
 
       [if-exp (test-exp then-exp else-exp)
         (if (eval-exp test-exp env)
-          (eval-exp then-exp env)
+           (eval-exp then-exp env)
           (eval-exp else-exp env))]
       ;todos
       [no-else-if-exp (test-exp then-exp)
@@ -76,8 +76,16 @@
       [improper-lambda-exp (params rest body)
         (improper-closure params rest body env)]
 
+      [while-exp (test bodies)
+           (if (eval-exp test env)
+           (begin (eval-exp (begin-exp bodies) env)
+            (eval-exp (while-exp test bodies) env)))]
+
 
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
+
+
+
 
 ; evaluate the list of operands  putting results into a list
 
@@ -97,7 +105,7 @@
       [(proc-val? proc-value)
         (cases proc-val proc-value
         [prim-proc (op) (apply-prim-proc op args)]
-  			[closure (vars bodies env)(eval-exp   bodies (extend-env  vars  args env))]
+        [closure (vars bodies env)(eval-exp   bodies (extend-env  vars  args env))]
         [informal-closure (vars bodies env)  (eval-exp bodies (extend-env  (list vars)  (list args) env)) ]
         [improper-closure (params rest body env) 
         (let* ([parsed-args (parse-args (length params) args)]
@@ -121,10 +129,10 @@
 
 
 
-(define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = sqrt memv
-			      <  >  >= cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length 
-			      list->vector  list?  pair?  procedure?  vector->list  vector  make-vector  vector-ref  vector?  number?  symbol?  set-car!   set-cdr!  vector-set!   display   newline  
-			      cadr  cddr  cdar  caar  caaar  caadr  caddr  cadar  cdddr  cddar  cdaar  cdadr map apply))
+(define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = sqrt member else quotient 
+            <  >  >= cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length 
+            list->vector  list?  pair?  procedure?  vector->list  vector  make-vector  vector-ref  vector?  number?  symbol?  set-car!   set-cdr!  vector-set!   display   newline  
+            cadr  cddr  cdar  caar  caaar  caadr  caddr  cadar  cdddr  cddar  cdaar  cdadr map apply))
 
 (define init-env         ; for now  our initial global environment only contains 
   (extend-env            ; procedure names.  Recall that an environment associates
@@ -154,6 +162,7 @@
       [(>=)(>= (1st args)(2nd args))]
       [(car) (car (1st args))]
       [(cdr) (cdr (1st args))]
+      [(quotient) (quotient (1st args) (2nd args))]
       [(null?) (null? (1st args))]
       [(assq) (assq (1st args) (cdr args))]
       [(eq?) (eq? (1st args) (2nd args))]
@@ -169,7 +178,7 @@
       [(make-vector) (if (null? (cdr args))
        (make-vector (1st args))
        (make-vector (1st args) (2nd args)))]
-      [(memv) (display (1st args))(newline)(display (2nd args))(newline)(memv (1st args) (2nd args))]
+      [(member)(member (1st args) (2nd args))]
       [(vector-ref) (vector-ref (1st args) (cadr args))]
       [(vector?) (vector? (1st args))]
       [(number?) (number? (1st args))]
@@ -192,6 +201,7 @@
       [(cddar) (cddar (1st args))]
       [(cdaar) (cdaar (1st args))]
       [(cdadr) (cdadr (1st args))]
+      [(else) #t]
       [(map) (map (lambda (x) (apply-proc (car args) (list x))) (cadr args))]
       [(apply) (apply-proc (car args) (cadr args))]
       [(void) (void)]
@@ -204,7 +214,6 @@
   (lambda (exp)
       (cases expression exp
       [let-exp (vars exps bodies)
-        (display bodies) (newline)
         (app-exp (lambda-exp (map cadr vars) (begin-exp (map syntax-expand bodies))) (map syntax-expand exps))]
       [cond-exp (body)
         (let loop([body  body])
@@ -230,11 +239,23 @@
                             body))
             (syntax-expand (let-exp (list (car ids)) (list (car values)) 
                             (list (loop (cdr ids) (cdr values)))))))]
-      [case-exp (test body)
-      (let loop ([body body])
-        (if (and (null? (cdr body)) (equal? 'else (cadr (caar body))))
-          (if-exp (app-exp (var-exp 'memv) (list (lit-exp test (lit-exp (caar body))))) (cadar body)
-            (loop (cdr body)))))]
+
+      [case-exp (test-value cases)
+            (letrec ([helper (lambda (ls)
+              (if (null? (cdr ls))
+                  (if (and (not (null? (car ls))) (eq? (caar ls) 'else))
+                    (no-else-if-exp (app-exp (var-exp 'else) '()) (cadar ls))
+                      (no-else-if-exp (app-exp (var-exp 'member)   (list  test-value (lit-exp (caar ls))))
+                      (cadar ls)))
+                      
+              (if-exp (app-exp (var-exp 'member) (list test-value (lit-exp (caar ls))))
+              (cadar ls)
+              (helper (cdr ls)))))])
+            (helper cases))] 
+      [while-exp (test-value bodies)
+            (while-exp (syntax-expand test-value) (map syntax-expand bodies))]   
+
+
 
 
     [else exp])))
@@ -256,8 +277,7 @@
 
 
 
-(define display pretty-print)
-
+;(define display pretty-print)
 
 
 
