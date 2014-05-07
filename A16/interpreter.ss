@@ -121,7 +121,7 @@
 
 
 
-(define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = 
+(define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = sqrt memv
 			      <  >  >= cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length 
 			      list->vector  list?  pair?  procedure?  vector->list  vector  make-vector  vector-ref  vector?  number?  symbol?  set-car!   set-cdr!  vector-set!   display   newline  
 			      cadr  cddr  cdar  caar  caaar  caadr  caddr  cadar  cdddr  cddar  cdaar  cdadr map apply))
@@ -169,10 +169,12 @@
       [(make-vector) (if (null? (cdr args))
        (make-vector (1st args))
        (make-vector (1st args) (2nd args)))]
+      [(memv) (display (1st args))(newline)(display (2nd args))(newline)(memv (1st args) (2nd args))]
       [(vector-ref) (vector-ref (1st args) (cadr args))]
       [(vector?) (vector? (1st args))]
       [(number?) (number? (1st args))]
       [(symbol?) (symbol? (1st args))]
+      [(sqrt) (sqrt (1st args))]
       [(set-car!) (set-car! (1st args) (2nd args))]
       [(set-cdr!) (set-cdr! (1st args) (2nd args))]
       [(vector-set!) (vector-set! (1st args) (2nd args) (3rd args))]
@@ -201,8 +203,8 @@
 (define syntax-expand
   (lambda (exp)
       (cases expression exp
-      
       [let-exp (vars exps bodies)
+        (display bodies) (newline)
         (app-exp (lambda-exp (map cadr vars) (begin-exp (map syntax-expand bodies))) (map syntax-expand exps))]
       [cond-exp (body)
         (let loop([body  body])
@@ -217,8 +219,27 @@
         (let loop ([body body])
           (if (null?  body)
             (lit-exp #f)
-            (if-exp (car body) (car body) (loop (cdr body)))))]     
-      [else exp])))
+            (if-exp (car body) (car body) (loop (cdr body)))))]
+      [let*-exp (ids values body) 
+        ; (display "id")(display ids) (newline)
+        ; (display "values")(display values)(newline)
+        ;  (display "body")(display body)(newline)
+       (let loop ([ids ids] [values values])
+          (if (null? (cdr ids))
+            (syntax-expand (let-exp (list (car ids)) (list (car values)) 
+                            body))
+            (syntax-expand (let-exp (list (car ids)) (list (car values)) 
+                            (list (loop (cdr ids) (cdr values)))))))]
+      [case-exp (test body)
+      (let loop ([body body])
+        (if (and (null? (cdr body)) (equal? 'else (cadr (caar body))))
+          (if-exp (app-exp (var-exp 'memv) (list (lit-exp test (lit-exp (caar body))))) (cadar body)
+            (loop (cdr body)))))]
+
+
+    [else exp])))
+
+         
 
 (define rep      ; "read-eval-print" loop.
   (lambda ()

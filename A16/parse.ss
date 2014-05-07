@@ -64,6 +64,9 @@
     (body list?))
   (and-exp
     (body list?))
+  (case-exp 
+    (test list?)
+    (body list?))
   )
 
 (define proper-list?
@@ -155,9 +158,8 @@
           (if (equal? (length datum) 2)
               (lit-exp  (cadr datum))
               (eopl:error 'parse-exp "Error in parse-exp: Invalid syntax ~s" datum)))
-         
 
-[(eqv? (car datum) 'lambda)
+  [(eqv? (car datum) 'lambda)
    (if (validLambda? datum)
     (cond 
        [(symbol? (cadr datum)) (no-parens-lambda-exp(cadr datum)
@@ -211,7 +213,8 @@
                   (if-exp (parse-exp (cadr datum)) (parse-exp (caddr datum)) (parse-exp (cadddr datum)))))) ;if w/ else
          ((eqv? (car datum) 'cond)
           (cond-exp (map (lambda (x) (list (parse-exp (car x)) (parse-exp (cadr x)))) (cdr datum))))
-          
+          ((eqv? (car datum) 'case)
+          (case-exp (parse-exp (cadr datum)) (map (lambda (x) (list (parse-exp (car x)) (parse-exp (cadr x)))) (cddr datum))))
          ((eqv? (car datum) 'begin)
           (begin-exp (map (lambda (x) (parse-exp x)) (cdr datum))))
          ((eqv? (car datum) 'or)
