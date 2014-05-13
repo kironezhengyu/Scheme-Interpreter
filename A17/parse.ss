@@ -38,14 +38,15 @@
    (values (list-of expression?))
    (body (list-of expression?)))
   (letrec-exp
-   (ids (list-of expression?))
-   (values (list-of expression?))
-   (body (list-of expression?)))
+   (vars (list-of symbol?))
+   (vals (list-of (list-of symbol?)))
+   (bodies (list-of expression?))
+   (letrec-bodies (list-of scheme-value?)))
   (named-let-exp
-   (name expression?)
-   (ids (list-of expression?))
+   (name symbol?)
+   (ids (list-of symbol?))
    (values (list-of expression?))
-   (body (list-of expression?)))
+   (body expression?))
   (set!-exp
    (id symbol?)
    (body expression?))
@@ -186,7 +187,7 @@
                   (andmap (map (lambda (ls) (equal? (length ls) 2)) (caddr datum))) 
                   (andmap (map (lambda (ls) (symbol? (car ls)))(caddr datum))) 
                   (not (contain-multiple? (map car (caddr datum)))) (symbol? (cadr datum))) 
-             (named-let-exp (var-exp (cadr datum)) (map parse-exp (map car (caddr datum))) (map parse-exp (map cadr (caddr datum))) (map parse-exp (cdddr datum))))
+             (named-let-exp (cadr datum) (map car (caddr datum)) (map parse-exp (map cadr (caddr datum))) (parse-exp (cadddr datum))))
             (else (eopl:error 'parse-exp "Error in parse-exp: Invalid syntax ~s" datum))))
          
          ((eqv? (car datum) 'let*)
@@ -200,7 +201,8 @@
          
          ((eqv? (car datum) 'letrec)
           (if (validate-let datum)
-              (letrec-exp (map parse-exp (map car (cadr datum))) (map parse-exp (map cadr (cadr datum))) (map parse-exp (cddr datum)))
+              (letrec-exp (map car (cadr datum)) (map cadadr (cadr datum)) (map parse-exp (map (lambda(x) (car (cddadr x))) (cadr datum)))
+                (map parse-exp (cddr datum)))
               (eopl:error 'parse-exp "Error in parse-exp: Invalid syntax ~s" datum)))
          
          ((eqv? (car datum) 'set!)

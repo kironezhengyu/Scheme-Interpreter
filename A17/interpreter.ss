@@ -31,7 +31,6 @@
 ;add local enviroment
 (define eval-exp
   (lambda (exp env)
-    ; (display "i am top " )(display exp) (newline)
     (cases expression exp
       [lit-exp (datum) datum]
       [begin-exp (exps)
@@ -69,13 +68,20 @@
            (if (eval-exp test env)
            (begin (eval-exp (begin-exp bodies) env)
             (eval-exp (while-exp test bodies) env)))]
-      [letrec-exp (vars vals exprs)
-       (eval-letrec vars vals exps env)]
+      [letrec-exp (vars vals bodies letrec-bodies)
+        ;(display bodies) (newline) 
+        (getlast (map (lambda (x) (eval-exp x
+                          (extend-env-recursively
+                            vars vals bodies env))) letrec-bodies))]
 
 
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
-
+(define getlast
+  (lambda (exp)
+    (if (null? (cdr exp))
+      (car exp)
+      (getlast (cdr exp)))))
 
 
 
@@ -89,7 +95,6 @@
 ;  Apply a procedure to its arguments.
 ;  At this point  we only have primitive procedures.  
 ;  User-defined procedures will be added later.
-
 
 
 (define apply-proc
@@ -121,8 +126,8 @@
 
 
 
-(define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = sqrt member else quotient eqv
-            <  >  >= cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length 
+(define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = sqrt member else quotient eqv?
+            <  >  >= cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length union list-tail
             list->vector  list?  pair?  procedure?  vector->list  vector  make-vector  vector-ref  vector?  number?  symbol?  set-car!   set-cdr!  vector-set!   display   newline  
             cadr  cddr  cdar  caar  caaar  caadr  caddr  cadar  cdddr  cddar  cdaar  cdadr map apply))
 
@@ -155,13 +160,13 @@
       [(car) (car (1st args))]
       [(cdr) (cdr (1st args))]
       [(quotient) (quotient (1st args) (2nd args))]
-      [(eqv) (eqv (1st args)(2nd args))]
+      [(eqv?) (eqv? (1st args)(2nd args))]
       [(null?) (null? (1st args))]
       [(assq) (assq (1st args) (cdr args))]
       [(eq?) (eq? (1st args) (2nd args))]
       [(equal?) (equal? (1st args) (2nd args))]
       [(atom?) (atom? (1st args))]
-      [(length) (length (1st args))]
+      [(length)(length (1st args))]
       [(list->vector) (list->vector (1st args))]
       [(list?) (list? (1st args))]
       [(pair?) (pair? (1st args))]
@@ -171,7 +176,8 @@
       [(make-vector) (if (null? (cdr args))
        (make-vector (1st args))
        (make-vector (1st args) (2nd args)))]
-      [(member)(member (1st args) (2nd args))]
+      [(list-tail) (list-tail (1st args) (2nd args))]
+      [(member) (member (1st args) (2nd args))]
       [(vector-ref) (vector-ref (1st args) (cadr args))]
       [(vector?) (vector? (1st args))]
       [(number?) (number? (1st args))]
@@ -247,16 +253,14 @@
             (helper cases))] 
       [while-exp (test-value bodies)
             (while-exp (syntax-expand test-value) (map syntax-expand bodies))]
+      [named-let-exp (name ids values body)
+        (app-exp (letrec-exp (list name) (list ids) (map syntax-expand (list body)) (list (var-exp name))) values)]
+      [if-exp (test-exp then-exp else-exp)
+      (if-exp test-exp then-exp (syntax-expand else-exp))]
 
-      [letrec-exp (vars vals exprs)
-        (letrec-exp vars (map syntax-expand vals) (map syntax-expand exprs))]   
-
-
-
-
+      [letrec-exp (vars vals bodies letrec-bodies)
+          (letrec-exp vars vals (map syntax-expand bodies) (map syntax-expand letrec-bodies))]      
     [else exp])))
-
-         
 
 (define rep      ; "read-eval-print" loop.
   (lambda ()
@@ -273,7 +277,7 @@
 
 
 
-;(define display pretty-print)
+(define display pretty-print)
 
 
 

@@ -28,8 +28,22 @@
       (empty-env-record ()
         (fail))
       (extended-env-record (syms vals env)
-	(let ((pos (list-find-position sym syms)))
+	     (let ((pos (list-find-position sym syms)))
       	  (if (number? pos)
 	      (succeed (list-ref vals pos))
-	      (apply-env env sym succeed fail)))))))
+	      (apply-env env sym succeed fail))))
+      (recursively-extended-env-record (vars vals bodies old-env)
+        (let ((pos (list-find-position sym vars)))
+          (if (number? pos)
+            (succeed (closure (list-ref vals pos)
+              (list-ref bodies pos) 
+              env))
+            (apply-env old-env sym succeed fail)))))))
+
+(define extend-env-recursively
+  (lambda (vars vals bodies env)
+    (recursively-extended-env-record
+      vars vals bodies env)))
+
+
 
