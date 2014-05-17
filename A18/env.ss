@@ -8,6 +8,40 @@
   (lambda (syms vals env)
     (extended-env-record syms vals env)))
 
+
+
+(define reset-global-env
+  (lambda ()
+    (set! global-env   (map (lambda (name)
+   (cons name (list (primitive name))))
+       *prim-proc-names*))))
+
+
+
+(define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = sqrt member else quotient eqv? append
+            <  >  >= cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length union list-tail
+            list->vector  list?  pair?  procedure?  vector->list  vector  make-vector  vector-ref  vector?  number?  symbol?  set-car!   set-cdr!  vector-set!   display   newline  
+            cadr  cddr  cdar  caar  caaar  caadr  caddr  cadar  cdddr  cddar  cdaar  cdadr map apply))
+
+(define init-env         ; for now  our initial global environment only contains 
+  (extend-env            ; procedure names.  Recall that an environment associates
+     *prim-proc-names*   ;  a value (not an expression) with an identifier.
+     (map prim-proc      
+          *prim-proc-names*)
+     (empty-env)))
+
+
+(define global-env
+  (map (lambda (name)
+   (cons name (list (primitive name))))
+       *prim-proc-names*))
+
+
+(define empty-env
+    (lambda ()
+          '()))
+
+
 (define list-find-position
   (lambda (sym los)
     (list-index (lambda (xsym) (eqv? sym xsym)) los)))
