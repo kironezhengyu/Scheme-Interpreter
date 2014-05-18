@@ -27,6 +27,7 @@
         (if (null? (cdr exp))
         (eval-exp (car exp) env)
         (begin (eval-exp (car exp) env) (loop (cdr exp)))))))
+
 ;add local enviroment
 (define eval-exp
   (lambda (exp env)
@@ -146,17 +147,6 @@
 
 
 
-(define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = sqrt member else quotient eqv? append
-            <  >  >= cons  car  cdr  list  null?  assq  eq?  equal?  atom?  length union list-tail
-            list->vector  list?  pair?  procedure?  vector->list  vector  make-vector  vector-ref  vector?  number?  symbol?  set-car!   set-cdr!  vector-set!   display   newline  
-            cadr  cddr  cdar  caar  caaar  caadr  caddr  cadar  cdddr  cddar  cdaar  cdadr map apply))
-
-(define init-env         ; for now  our initial global environment only contains 
-  (extend-env            ; procedure names.  Recall that an environment associates
-     *prim-proc-names*   ;  a value (not an expression) with an identifier.
-     (map prim-proc      
-          *prim-proc-names*)
-     (empty-env)))
 
 ; Usually an interpreter must define each 
 ; built-in procedure individually.  We are "cheating" a little bit.
