@@ -24,7 +24,7 @@
    (env environment?))
   (recursively-extended-env-record
     (vars (list-of symbol?))
-    (vals (list-of (list-of symbol?)))
+    (vals (list-of scheme-value?))
     (bodies (list-of expression?))
     (env environment?)))
 
@@ -34,7 +34,7 @@
 
 (define-datatype proc-val proc-val?
   [prim-proc (name symbol?)]
-  [closure (params (list-of scheme-value?))
+  [closure (params  scheme-value?)
           (body  expression?)
           (env list?)]
   [informal-closure (params  scheme-value?)

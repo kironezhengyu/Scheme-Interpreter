@@ -4,9 +4,30 @@
   (lambda ()
     (empty-env-record)))
 
+(define (apply-env-ref env var)
+  (cases environment env
+    (empty-env-record () 'nah)
+    (extended-env-record (syms vals env)
+      (let ((pos (list-find-position var syms)))
+        ; (display var)
+        ; (display 'pos)
+        ; (display pos)
+        ; (display 'syms)
+        ; (display syms)
+        (if (number? pos) (list-ref vals pos) 'nah)))
+    (recursively-extended-env-record (vars vals bodies old-env) 'nah)
+    ))
+
+(define (deref ref)
+  (unbox ref))
+
+(define (set-ref! ref value)
+  (set-box! ref value))
+
 (define extend-env
   (lambda (syms vals env)
-    (extended-env-record syms vals env)))
+    (extended-env-record syms (map box vals) env)))
+
 
 (define list-find-position
   (lambda (sym los)
@@ -27,11 +48,11 @@
     (cases environment env
       (empty-env-record ()
         (fail))
-      (extended-env-record (syms vals env)
-	     (let ((pos (list-find-position sym syms)))
-      	  (if (number? pos)
-	      (succeed (list-ref vals pos))
-	      (apply-env env sym succeed fail))))
+      (extended-env-record (syms vals ext-env)
+        (let [(result (apply-env-ref env sym))]
+          (if (and (not (equal? result 'nah)) (not(equal? result (void)))) 
+            (succeed  result)
+	          (apply-env ext-env sym succeed fail))))
       (recursively-extended-env-record (vars vals bodies old-env)
         (let ((pos (list-find-position sym vars)))
           (if (number? pos)
@@ -44,6 +65,13 @@
   (lambda (vars vals bodies env)
     (recursively-extended-env-record
       vars vals bodies env)))
-
+(define reset-global-env
+  (lambda ()
+    (set! init-env 
+    (extend-env            ; procedure names.  Recall that an environment associates
+     *prim-proc-names*   ;  a value (not an expression) with an identifier.
+     (map prim-proc      
+          *prim-proc-names*)
+     (empty-env)))))
 
 

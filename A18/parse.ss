@@ -20,7 +20,7 @@
   (lit-exp
    (id scheme-value?))
   (lambda-exp
-   (id (list-of symbol?))
+   (id (list-of scheme-value?))
    (body expression?))
   (no-parens-lambda-exp
    (id symbol?)
@@ -50,8 +50,13 @@
   (set!-exp
    (id symbol?)
    (body expression?))
+  (define-exp
+    (id symbol?)
+    (body expression?))
   (begin-exp
-  (exps (list-of expression?)))
+  (exps (list-of scheme-value?)))
+  (ref-exp
+    (id symbol?))
   (if-exp
    (test expression?)
    (true expression?)
@@ -116,14 +121,7 @@
       (eopl:error  'parse-expression "Each variable may only occur once in ~s" expr)]
      [else #t])))
 
-(define parse-parms
-    (lambda (ls)
-        (if (symbol? ls)
-            ls
-            (let ([t (parse-parms (cdr ls))])
-                (if (symbol? t)
-                    (cons (list (car ls)) (list (list t)))
-                    (cons (cons (car ls) (car t)) (cdr t)))))))
+
 (define andmap
   (lambda (ls)
     (if (null? ls)
@@ -143,7 +141,16 @@
       ((null? ls) #f)
       ((member (car ls) (cdr ls)) #t)
       (else (contain-multiple? (cdr ls))))))
-   
+
+(define parse-parms
+    (lambda (ls)
+      (if (symbol? ls)
+            ls
+            (let ([t (parse-parms (cdr ls))])
+                (if (symbol? t)
+                    (cons (list (car ls)) (list (list t)))
+                    (cons (cons (car ls) (car t)) (cdr t)))))))
+
 ;Problem 2
 (define parse-exp
   (lambda (datum)
@@ -168,7 +175,7 @@
     (cond 
        [(symbol? (cadr datum)) (no-parens-lambda-exp(cadr datum)
      (begin-exp(map parse-exp (cddr datum))))]
-     [(list? (cadr datum)) (lambda-exp(cadr datum)
+     [(list? (cadr datum)) (lambda-exp  (cadr datum)
        (begin-exp(map parse-exp (cddr datum))))]
      [(pair? (cadr datum))
    (let ([t (parse-parms (cadr datum))])
@@ -209,7 +216,12 @@
           (if (not (equal? (length datum) 3))
               (eopl:error 'parse-exp "Error in parse-exp: Incorrect length in ~s" datum)
               (set!-exp (cadr datum) (parse-exp (caddr datum)))))
-         
+
+         ((eqv? (car datum) 'define)
+          (if (not (equal? (length datum) 3))
+              (eopl:error 'parse-exp "Error in parse-exp: Incorrect length in ~s" datum)
+              (define-exp (cadr datum) (parse-exp (caddr datum)))))
+
          ((eqv? (car datum) 'if)
           (if (or (< (length datum) 3) (> (length datum) 4))
               (eopl:error 'parse-exp "Error in parse-exp: Incorrect length in ~s" datum)

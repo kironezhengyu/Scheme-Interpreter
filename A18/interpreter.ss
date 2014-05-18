@@ -4,11 +4,10 @@
 
       
 
-
 (define top-level-eval
   (lambda (form)
     ; later we may add things that are not expressions.
-    (eval-exp form init-env)))
+    (eval-exp form (empty-env))))
 
 ; eval-exp is the main component of the interpreter
 (define parse-args
@@ -26,8 +25,8 @@
   (lambda (exp env )
     (let loop([exp exp])
         (if (null? (cdr exp))
-        (eval-exp (syntax-expand(car exp)) env)
-        (begin (eval-exp (syntax-expand(car exp)) env) (loop (cdr exp)))))))
+        (eval-exp (car exp) env)
+        (begin (eval-exp (car exp) env) (loop (cdr exp)))))))
 ;add local enviroment
 (define eval-exp
   (lambda (exp env)
@@ -36,13 +35,16 @@
       [begin-exp (exps)
           (eval-begin exps env)]  
       [var-exp (id)
-        (apply-env env id; look up its value.
+        (let [(result (apply-env env id; look up its value.
            (lambda (x) x) ; procedure to call if id is in the environment 
            (lambda () (apply-env init-env id
                           (lambda (x) x)
                           (lambda () (eopl:error 'apply-env ; procedure to call if id not in env
-              "variable not found in environment: ~s" id )))))]
+              "variable not found in environment: ~s" id ))))))]
+        (if (box? result) (deref result) result))
+        ]
       [app-exp (rator rands)
+        ;(display rator)
         (let ([proc-value (eval-exp rator env)]
               [args (eval-rands rands env)])
           (apply-proc proc-value args))]
@@ -73,7 +75,21 @@
         (getlast (map (lambda (x) (eval-exp x
                           (extend-env-recursively
                             vars vals bodies env))) letrec-bodies))]
-
+      [define-exp (id exp)
+        (let [(result (apply-env-ref env id))]
+          (if (equal? result 'nah)
+              (set! init-env 
+                    (append 
+                    (append (list (car init-env) (cons id (2nd init-env))) 
+                            (list (cons (box (eval-exp exp env)) (3rd init-env))))
+                    (list (cadddr init-env))))  (display "nonono")))]
+      [set!-exp (id exp) 
+      (set-ref! (apply-env env id; look up its value.
+           (lambda (x) x) ; procedure to call if id is in the environment 
+           (lambda () (apply-env init-env id
+                          (lambda (x) x)
+                          (lambda () (eopl:error 'apply-env ; procedure to call if id not in env
+              "variable not found in environment: ~s" id ))))) (eval-exp exp env))]
 
       [else (eopl:error 'eval-exp "Bad abstract syntax: ~a" exp)])))
 
@@ -96,6 +112,10 @@
 ;  At this point  we only have primitive procedures.  
 ;  User-defined procedures will be added later.
 
+; (define (get-ref var)
+;   (if (list? var)
+
+;     var)
 
 (define apply-proc
   (lambda (proc-value args)
@@ -103,7 +123,7 @@
       [(proc-val? proc-value)
         (cases proc-val proc-value
         [prim-proc (op) (apply-prim-proc op args)]
-        [closure (vars bodies env)(eval-exp   bodies (extend-env  vars  args env))]
+        [closure (vars bodies env) (eval-exp   bodies (extend-env  vars  args env))]
         [informal-closure (vars bodies env)  (eval-exp bodies (extend-env  (list vars)  (list args) env)) ]
         [improper-closure (params rest body env) 
         (let* ([parsed-args (parse-args (length params) args)]
@@ -162,7 +182,7 @@
       [(quotient) (quotient (1st args) (2nd args))]
       [(eqv?) (eqv? (1st args)(2nd args))]
       [(null?) (null? (1st args))]
-      [(assq) (assq (1st args) (cdr args))]
+      [(assq) (assq (1st args) (2nd args))]
       [(eq?) (eq? (1st args) (2nd args))]
       [(equal?) (equal? (1st args) (2nd args))]
       [(atom?) (atom? (1st args))]
@@ -213,12 +233,18 @@
 (define syntax-expand
   (lambda (exp)
       (cases expression exp
+      [define-exp (id exp)
+        (define-exp id (syntax-expand exp))]
+      [lambda-exp (params body)
+          (lambda-exp params (syntax-expand body))]
+      [if-exp (test-exp then-exp else-exp)
+          (if-exp (syntax-expand test-exp) (syntax-expand then-exp) (syntax-expand else-exp))]
       [let-exp (vars exps bodies)
         (app-exp (lambda-exp (map cadr vars) (begin-exp (map syntax-expand bodies))) (map syntax-expand exps))]
       [cond-exp (body)
         (let loop([body  body])
-          (if (null? (cdr body)) (cadar body)
-            (if-exp (caar body) (cadar body) (loop (cdr body)))))]
+          (if (null? (cdr body)) (syntax-expand (cadar body))
+           (if-exp (syntax-expand (caar body)) (syntax-expand (cadar body)) (loop (cdr body)))))]
       [and-exp (body)
         (let loop ([body body])
           (if (null?  (cdr body))
@@ -228,7 +254,7 @@
         (let loop ([body body])
           (if (null?  body)
             (lit-exp #f)
-            (if-exp (car body) (car body) (loop (cdr body)))))]
+            (if-exp (car body) (lit-exp #t) (loop (cdr body)))))]
       [let*-exp (ids values body) 
         ; (display "id")(display ids) (newline)
         ; (display "values")(display values)(newline)
@@ -256,12 +282,20 @@
             (while-exp (syntax-expand test-value) (map syntax-expand bodies))]
       [named-let-exp (name ids values body)
         (app-exp (letrec-exp (list name) (list ids) (map syntax-expand (list body)) (list (var-exp name))) values)]
-      [if-exp (test-exp then-exp else-exp)
-      (if-exp test-exp then-exp (syntax-expand else-exp))]
+      
+
+      [begin-exp (exp)
+        (begin-exp (map syntax-expand exp))]
 
       [letrec-exp (vars vals bodies letrec-bodies)
           (letrec-exp vars vals (map syntax-expand bodies) (map syntax-expand letrec-bodies))]      
     [else exp])))
+
+; (define (expand-begin exp)
+;   (if (null? (cdr exp))
+;      (syntax-expand (car exp))
+;     (begin (syntax-expand (car exp)) 
+;       (expand-begin (cdr exp)))))
 
 (define rep      ; "read-eval-print" loop.
   (lambda ()
@@ -282,3 +316,4 @@
 
 
 
+(define (sp exp) (syntax-expand (parse-exp exp)))
