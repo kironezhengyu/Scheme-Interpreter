@@ -33,10 +33,12 @@
 
 (define reset-global-env
   (lambda ()
-    (set! global-env   (map (lambda (name)
-   (cons name (list (primitive name))))
-       *prim-proc-names*))))
-
+    (set! init-env 
+    (extend-env            ; procedure names.  Recall that an environment associates
+     *prim-proc-names*   ;  a value (not an expression) with an identifier.
+     (map prim-proc      
+          *prim-proc-names*)
+     (empty-env)))))
 
 
 (define *prim-proc-names* '(+ - *   /  add1  sub1  zero?  not  = sqrt member else quotient eqv? append
@@ -50,18 +52,6 @@
      (map prim-proc      
           *prim-proc-names*)
      (empty-env)))
-
-
-(define global-env
-  (map (lambda (name)
-   (cons name (list (primitive name))))
-       *prim-proc-names*))
-
-
-(define empty-env
-    (lambda ()
-          '()))
-
 
 (define list-find-position
   (lambda (sym los)
