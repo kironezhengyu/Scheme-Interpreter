@@ -7,7 +7,7 @@
 (define (apply-env-ref env var)
   (cases environment env
     (empty-env-record () 'nah)
-    (extended-env-record (syms vals ext-env)
+    (extended-env-record (syms vals env)
       (let ((pos (list-find-position var syms)))
         ; (display var)
         ; (display 'pos)
@@ -68,7 +68,7 @@
 		 #f))))))
 
 (define apply-env
-  (lambda (env sym succeed fail) ; succeed and fail are procedures applied if the var is or isn't found, respectively
+  (lambda (env sym succeed fail) ; succeed and fail are procedures applied if the var is or isn't found, respectively.
     (cases environment env
       (empty-env-record ()
         (fail))

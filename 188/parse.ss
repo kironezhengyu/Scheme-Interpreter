@@ -22,9 +22,6 @@
   (lambda-exp
    (id (list-of scheme-value?))
    (body expression?))
-  (ref-lambda-exp
-   (id (list-of scheme-value?))
-   (body expression?))
   (no-parens-lambda-exp
    (id symbol?)
    (body expression?))
@@ -154,17 +151,6 @@
                     (cons (list (car ls)) (list (list t)))
                     (cons (cons (car ls) (car t)) (cdr t)))))))
 
-(define (parse-refs params)
-  (let loop([params params])
-    (if (null?  params)
-      '()
-      (if (symbol? (car params))
-        (cons (car params) (loop (cdr params)))
-        (cons (ref-exp (cadr (car params))) (loop (cdr params)))))))
-
-(define (is-lambda params)
-  (andmap (map symbol? params)))
-
 ;Problem 2
 (define parse-exp
   (lambda (datum)
@@ -189,18 +175,13 @@
     (cond 
        [(symbol? (cadr datum)) (no-parens-lambda-exp(cadr datum)
      (begin-exp(map parse-exp (cddr datum))))]
-     [(list? (cadr datum)) 
-      (if (is-lambda (cadr datum))
-        (lambda-exp   (cadr datum)
-          (begin-exp(map parse-exp (cddr datum))))
-        (ref-lambda-exp (parse-refs (cadr datum))
-          (begin-exp(map parse-exp (cddr datum)))))
-        ]
+     [(list? (cadr datum)) (lambda-exp  (cadr datum)
+       (begin-exp(map parse-exp (cddr datum))))]
      [(pair? (cadr datum))
    (let ([t (parse-parms (cadr datum))])
      (improper-lambda-exp (car t) (caadr t)  (begin-exp(map parse-exp (cddr datum)))))]))]
          
-    ((eqv? (car datum) 'let)
+         ((eqv? (car datum) 'let)
           (cond
             ((and (> (length datum) 2) (proper-list? (cadr datum)) 
                   (andmap (map proper-list? (cadr datum)))
@@ -258,10 +239,6 @@
             (list (list (caar ls) (parse-exp (cadar ls)))))
         (cons (list (caar ls) (parse-exp (cadar ls))) (helper (cdr ls)))))])
   (helper (cddr datum))))]
-
-    [(eq? (car datum) 'ref)
-        (ref-exp (cadr datum))
-    ]
 
 
 

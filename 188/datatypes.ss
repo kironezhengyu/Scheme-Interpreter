@@ -37,9 +37,6 @@
   [closure (params  scheme-value?)
           (body  expression?)
           (env list?)]
-  [ref-closure (params  scheme-value?)
-          (body  expression?)
-          (env list?)]
   [informal-closure (params  scheme-value?)
           (body  expression?)
           (env list?)]
