@@ -151,6 +151,10 @@
                     (cons (list (car ls)) (list (list t)))
                     (cons (cons (car ls) (car t)) (cdr t)))))))
 
+(define (parse-refs params)
+  (map parse-exp params))
+
+
 ;Problem 2
 (define parse-exp
   (lambda (datum)
@@ -175,13 +179,13 @@
     (cond 
        [(symbol? (cadr datum)) (no-parens-lambda-exp(cadr datum)
      (begin-exp(map parse-exp (cddr datum))))]
-     [(list? (cadr datum)) (lambda-exp  (cadr datum)
+     [(list? (cadr datum)) (lambda-exp  (parse-refs (cadr datum))
        (begin-exp(map parse-exp (cddr datum))))]
      [(pair? (cadr datum))
    (let ([t (parse-parms (cadr datum))])
      (improper-lambda-exp (car t) (caadr t)  (begin-exp(map parse-exp (cddr datum)))))]))]
          
-         ((eqv? (car datum) 'let)
+    ((eqv? (car datum) 'let)
           (cond
             ((and (> (length datum) 2) (proper-list? (cadr datum)) 
                   (andmap (map proper-list? (cadr datum)))
@@ -239,6 +243,10 @@
             (list (list (caar ls) (parse-exp (cadar ls)))))
         (cons (list (caar ls) (parse-exp (cadar ls))) (helper (cdr ls)))))])
   (helper (cddr datum))))]
+
+    [(eq? (car datum) 'ref)
+        (ref-exp (cadr datum))
+    ]
 
 
 

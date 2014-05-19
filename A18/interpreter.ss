@@ -67,6 +67,14 @@
       [improper-lambda-exp (params rest body)
         (improper-closure params rest body env)]
 
+      [ref-exp(id) 
+      (apply-env env id; look up its value.
+           (lambda (x) x) ; procedure to call if id is in the environment 
+           (lambda () (apply-env init-env id
+                          (lambda (x) x)
+                          (lambda () (eopl:error 'apply-env ; procedure to call if id not in env
+              "variable not found in environment: ~s" id )))))]
+
       [while-exp (test bodies)
            (if (eval-exp test env)
            (begin (eval-exp (begin-exp bodies) env)
@@ -113,10 +121,8 @@
 ;  At this point  we only have primitive procedures.  
 ;  User-defined procedures will be added later.
 
-; (define (get-ref var)
-;   (if (list? var)
-
-;     var)
+(define (parse-vars vars env)
+     (map  (lambda(x) (eval-exp x env)) vars))
 
 (define apply-proc
   (lambda (proc-value args)
@@ -281,11 +287,6 @@
           (letrec-exp vars vals (map syntax-expand bodies) (map syntax-expand letrec-bodies))]      
     [else exp])))
 
-; (define (expand-begin exp)
-;   (if (null? (cdr exp))
-;      (syntax-expand (car exp))
-;     (begin (syntax-expand (car exp)) 
-;       (expand-begin (cdr exp)))))
 
 (define rep      ; "read-eval-print" loop.
   (lambda ()
@@ -301,9 +302,7 @@
 
 
 
-
 (define display pretty-print)
-
 
 
 (define (sp exp) (syntax-expand (parse-exp exp)))
