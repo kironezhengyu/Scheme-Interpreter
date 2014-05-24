@@ -16,6 +16,7 @@
 ;   [begin-exp
 ;   (exps (list-of expression?))]  
 ;   )
+
 (define-datatype environment environment?
   (empty-env-record)
   (extended-env-record
@@ -28,36 +29,18 @@
     (bodies (list-of expression?))
     (env environment?)))
 
-	
-; datatype for procedures.  At first there is only one
-; kind of procedure, but more kinds will be added later.
 
-(define-datatype proc-val proc-val?
-  [prim-proc (name symbol?)]
-  [closure (params  scheme-value?)
-          (body  expression?)
-          (env list?)]
-  [informal-closure (params  scheme-value?)
-          (body  expression?)
-          (env list?)]
-  [improper-closure
-   (params (list-of symbol?))
-   (rest symbol?)
-   (bodies expression?)
-   (env list?)
-  ]
- )
-	 
-	 
+(define-datatype proc proc?
+  [prim-proc
+   (id symbol?)]
+  [closure
+   (vars scheme-value?)
+   (body expression?)
+   (env list?)]
+   [acontinuation
+	(cont continuation?)])
+   
 
 (define scheme-value?
   (lambda (value)
     #t))
-	
-;; environment type definitions
-
-(define scheme-value?
-  (lambda (x) #t))
-
-
-
