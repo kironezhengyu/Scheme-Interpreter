@@ -17,8 +17,8 @@
 (define eval-expressions-cps
   (lambda (exps cont env)
     (if (null? exps)
-  (apply-k cont '())
-  (eval-exp (car exps) (eval-exps-cont (cdr exps) cont env) env))))      
+      (apply-k cont '())
+      (eval-exp (car exps) (eval-exps-cont (cdr exps) cont env) env))))      
 
 
 
@@ -29,7 +29,8 @@
     (cases expression exp
 	   [var-exp (id) (apply-k cont (apply-env env id))]
 	   [lit-exp (id) (apply-k cont id)]
-	   [exit-exp () (printf "please implement exit-exp")]
+	   [exit-exp (args) 
+      (eval-expressions-cps args (exit-cont) env)]
 	  [call/cc-exp (consumer)
     ;  (display "consumer") (newline)
     ;  (pretty-print consumer)

@@ -107,8 +107,9 @@
    (c continuation?)
    (cont continuation?))
    (append-cont
-  (arg list?)
-  (cont continuation?))
+    (arg list?)
+    (cont continuation?))
+   (exit-cont)
 	 )
    
 
@@ -231,4 +232,6 @@
          ])]
 		[rest-cont (c k)
 				(apply-proc (acontinuation c) val k)]
+    [exit-cont ()
+      val]
 		)))

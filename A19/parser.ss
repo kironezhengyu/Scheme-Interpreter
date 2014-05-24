@@ -60,7 +60,8 @@
   (define-exp
     (sym symbol?)
     (val expression?))
-  (exit-exp)
+  (exit-exp 
+  	(args (list-of expression?)))
   (break-exp
    (bodies (list-of expression?)))
   (call/cc-exp
@@ -82,7 +83,7 @@
 		 [(eq? (car datum) 'call/cc)
 			(call/cc-exp (parse-exp (cadr datum)))]
 		 [(eq? (car datum) 'exit)
-		  (exit-exp)]
+		  (exit-exp (map parse-exp (cdr datum)))]
 		 [(eq? (car datum) 'begin)
 		  (begin-exp (map parse-exp (cdr datum)))]
 		 [(eq? (car datum) 'break)
